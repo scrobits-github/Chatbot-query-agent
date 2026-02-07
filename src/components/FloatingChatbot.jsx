@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+
 const API_URL =
   window.CHATBOT_API_URL ||
   document.currentScript?.getAttribute("api_url") ||
@@ -13,6 +14,11 @@ const FloatingChatbot = () => {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
+  // WebSocket escalation state
+  const [isEscalated, setIsEscalated] = useState(false);
+  const [escalationId, setEscalationId] = useState(null);
+  const wsRef = useRef(null);
+
   const toggleChat = () => setIsOpen(!isOpen);
   const closeChat = () => setIsOpen(false);
 
@@ -20,12 +26,102 @@ const FloatingChatbot = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Cleanup WebSocket on unmount
+  useEffect(() => {
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, []);
+
+  // Connect to WebSocket for escalation
+  const connectWebSocket = (escId) => {
+    const baseUrl = API_URL.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${wsProtocol}//${baseUrl}/ws/escalation/${escId}/user`;
+
+    console.log("Connecting to WebSocket:", wsUrl);
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      console.log("WebSocket connected");
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "system",
+          text: "Please wait for admin to join...",
+        },
+      ]);
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log("WebSocket message:", data);
+
+      if (data.type === "message" && data.role === "admin") {
+        // Message from admin
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "admin",
+            text: data.message,
+          },
+        ]);
+      } else if (data.type === "system") {
+        // System notification (admin connected/disconnected)
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "system",
+            text: `${data.message}`,
+          },
+        ]);
+      }
+      // type === "message_sent" is just confirmation, no need to display
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket closed");
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "system",
+          text: "Chat with admin ended.",
+        },
+      ]);
+      setIsEscalated(false);
+      setEscalationId(null);
+    };
+
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "system",
+          text: "❌ Connection error. Please try again.",
+        },
+      ]);
+    };
+
+    wsRef.current = ws;
+  };
+
   const sendMessage = async () => {
     if (!input.trim()) return;
 
     const userMessage = { sender: "user", text: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+
+    // If escalated, send via WebSocket
+    if (isEscalated && wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ message: userMessage.text }));
+      return;
+    }
+
+    // Otherwise, use normal HTTP API
     setIsLoading(true);
 
     try {
@@ -36,8 +132,25 @@ const FloatingChatbot = () => {
       });
 
       const data = await res.json();
-      const botMessage = { sender: "bot", text: data.response };
-      setMessages((prev) => [...prev, botMessage]);
+
+      // Check if escalation is triggered
+      if (data.escalation_required && data.escalation_id) {
+        setEscalationId(data.escalation_id);
+        setIsEscalated(true);
+
+        // Add the AI's last message before escalation
+        setMessages((prev) => [
+          ...prev,
+          { sender: "bot", text: data.response },
+        ]);
+
+        // Connect to WebSocket
+        connectWebSocket(data.escalation_id);
+      } else {
+        // Normal flow
+        const botMessage = { sender: "bot", text: data.response };
+        setMessages((prev) => [...prev, botMessage]);
+      }
     } catch (error) {
       console.error("Error:", error);
       setMessages((prev) => [
@@ -56,14 +169,29 @@ const FloatingChatbot = () => {
     }
   };
 
+  // Get message styling based on sender
+  const getMessageStyle = (sender) => {
+    switch (sender) {
+      case "user":
+        return "bg-blue-500 text-white self-end rounded-br-none";
+      case "admin":
+        return "bg-green-500 text-white self-start rounded-bl-none";
+      case "system":
+        return "bg-yellow-100 text-yellow-800 self-center text-center italic text-sm";
+      default: // bot
+        return "bg-gray-100 text-gray-800 self-start rounded-bl-none";
+    }
+  };
+
   return (
     <div className="fixed bottom-28 right-25 z-[1000]">
       <div
-        className={`w-[60px] h-[60px] rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-all duration-300 text-white ${
-          isOpen
+        className={`w-[60px] h-[60px] rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-all duration-300 text-white ${isOpen
             ? "bg-gradient-to-br from-red-500 to-red-700 hover:shadow-xl"
-            : "bg-gradient-to-br from-blue-500 to-blue-700 hover:shadow-xl hover:scale-110"
-        }`}
+            : isEscalated
+              ? "bg-gradient-to-br from-green-500 to-green-700 hover:shadow-xl hover:scale-110"
+              : "bg-gradient-to-br from-blue-500 to-blue-700 hover:shadow-xl hover:scale-110"
+          }`}
         onClick={toggleChat}
       >
         <svg
@@ -87,15 +215,24 @@ const FloatingChatbot = () => {
       {/* Chat Window */}
       {isOpen && (
         <div className="fixed bottom-[100px] right-[100px] w-[380px] h-[500px] bg-white rounded-xl shadow-2xl flex flex-col z-[999] overflow-hidden border border-gray-200 animate-slide-up">
-          {/* Header */}
-          <div className="bg-gradient-to-br from-blue-500 to-blue-700 text-white p-4 flex justify-between items-center">
+          {/* Header - changes based on escalation status */}
+          <div
+            className={`text-white p-4 flex justify-between items-center ${isEscalated
+                ? "bg-gradient-to-br from-green-500 to-green-700"
+                : "bg-gradient-to-br from-blue-500 to-blue-700"
+              }`}
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-xl">
-                🤖
+                {isEscalated ? "👨‍💼" : "🤖"}
               </div>
               <div>
-                <h3 className="text-base font-semibold m-0">AI Assistant</h3>
-                <span className="text-xs opacity-80">Online</span>
+                <h3 className="text-base font-semibold m-0">
+                  {isEscalated ? "Live Support" : "AI Assistant"}
+                </h3>
+                <span className="text-xs opacity-80">
+                  {isEscalated ? "Connected to Admin" : "Online"}
+                </span>
               </div>
             </div>
             <button
@@ -118,16 +255,17 @@ const FloatingChatbot = () => {
             {messages.map((msg, index) => (
               <div
                 key={index}
-                className={`flex flex-col ${
-                  msg.sender === "user" ? "self-end items-end" : "self-start items-start"
-                }`}
+                className={`flex flex-col ${msg.sender === "user"
+                    ? "self-end items-end"
+                    : msg.sender === "system"
+                      ? "self-center items-center"
+                      : "self-start items-start"
+                  }`}
               >
                 <div
-                  className={`px-4 py-3 rounded-2xl break-normal whitespace-pre-line leading-relaxed overflow-hidden [word-break:break-word] ${
-                    msg.sender === "user"
-                      ? "bg-blue-500 text-white self-end rounded-br-none"
-                      : "bg-gray-100 text-gray-800 self-start rounded-bl-none"
-                  }`}
+                  className={`px-4 py-3 rounded-2xl break-normal whitespace-pre-line leading-relaxed overflow-hidden [word-break:break-word] max-w-[85%] ${getMessageStyle(
+                    msg.sender
+                  )}`}
                 >
                   {msg.text}
                 </div>
@@ -145,21 +283,21 @@ const FloatingChatbot = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="Type your message..."
+              placeholder={
+                isEscalated ? "Message admin..." : "Type your message..."
+              }
               rows="1"
               className="flex-1 border border-gray-300 rounded-2xl px-4 py-3 resize-none text-sm outline-none transition-colors min-h-[20px] max-h-[100px] focus:border-blue-500"
             />
             <button
               onClick={sendMessage}
               disabled={isLoading}
-              className="bg-blue-500 border-none rounded-full w-10 h-10 text-white cursor-pointer flex items-center justify-center transition-colors hover:bg-blue-700 disabled:opacity-50"
+              className={`border-none rounded-full w-10 h-10 text-white cursor-pointer flex items-center justify-center transition-colors disabled:opacity-50 ${isEscalated
+                  ? "bg-green-500 hover:bg-green-700"
+                  : "bg-blue-500 hover:bg-blue-700"
+                }`}
             >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"
                   stroke="currentColor"
