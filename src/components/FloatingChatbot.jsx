@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const API_URL =
   window.CHATBOT_API_URL ||
@@ -16,7 +18,7 @@ const FloatingChatbot = () => {
 
   // WebSocket escalation state
   const [isEscalated, setIsEscalated] = useState(false);
-  const [escalationId, setEscalationId] = useState(null);
+
   const wsRef = useRef(null);
 
   const toggleChat = () => setIsOpen(!isOpen);
@@ -50,7 +52,7 @@ const FloatingChatbot = () => {
         ...prev,
         {
           sender: "system",
-          text: "Please wait for admin to join...",
+          text: "Connecting you to the human assistant… please wait.",
         },
       ]);
     };
@@ -87,11 +89,11 @@ const FloatingChatbot = () => {
         ...prev,
         {
           sender: "system",
-          text: "Chat with admin ended.",
+          text: "This chat session has ended. I’m here whenever you need help again.",
         },
       ]);
       setIsEscalated(false);
-      setEscalationId(null);
+
     };
 
     ws.onerror = (error) => {
@@ -135,7 +137,7 @@ const FloatingChatbot = () => {
 
       // Check if escalation is triggered
       if (data.escalation_required && data.escalation_id) {
-        setEscalationId(data.escalation_id);
+
         setIsEscalated(true);
 
         // Add the AI's last message before escalation
@@ -187,10 +189,10 @@ const FloatingChatbot = () => {
     <div className="fixed bottom-28 right-25 z-[1000]">
       <div
         className={`w-[60px] h-[60px] rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-all duration-300 text-white ${isOpen
-            ? "bg-gradient-to-br from-red-500 to-red-700 hover:shadow-xl"
-            : isEscalated
-              ? "bg-gradient-to-br from-green-500 to-green-700 hover:shadow-xl hover:scale-110"
-              : "bg-gradient-to-br from-blue-500 to-blue-700 hover:shadow-xl hover:scale-110"
+          ? "bg-gradient-to-br from-red-500 to-red-700 hover:shadow-xl"
+          : isEscalated
+            ? "bg-gradient-to-br from-green-500 to-green-700 hover:shadow-xl hover:scale-110"
+            : "bg-gradient-to-br from-blue-500 to-blue-700 hover:shadow-xl hover:scale-110"
           }`}
         onClick={toggleChat}
       >
@@ -218,8 +220,8 @@ const FloatingChatbot = () => {
           {/* Header - changes based on escalation status */}
           <div
             className={`text-white p-4 flex justify-between items-center ${isEscalated
-                ? "bg-gradient-to-br from-green-500 to-green-700"
-                : "bg-gradient-to-br from-blue-500 to-blue-700"
+              ? "bg-gradient-to-br from-green-500 to-green-700"
+              : "bg-gradient-to-br from-blue-500 to-blue-700"
               }`}
           >
             <div className="flex items-center gap-3">
@@ -256,18 +258,18 @@ const FloatingChatbot = () => {
               <div
                 key={index}
                 className={`flex flex-col ${msg.sender === "user"
-                    ? "self-end items-end"
-                    : msg.sender === "system"
-                      ? "self-center items-center"
-                      : "self-start items-start"
+                  ? "self-end items-end"
+                  : msg.sender === "system"
+                    ? "self-center items-center"
+                    : "self-start items-start"
                   }`}
               >
                 <div
-                  className={`px-4 py-3 rounded-2xl break-normal whitespace-pre-line leading-relaxed overflow-hidden [word-break:break-word] max-w-[85%] ${getMessageStyle(
+                  className={`px-4 py-3 rounded-2xl break-normal leading-relaxed overflow-hidden [word-break:break-word] max-w-[85%] ${getMessageStyle(
                     msg.sender
-                  )}`}
+                  )} markdown-content`}
                 >
-                  {msg.text}
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
                 </div>
               </div>
             ))}
@@ -293,8 +295,8 @@ const FloatingChatbot = () => {
               onClick={sendMessage}
               disabled={isLoading}
               className={`border-none rounded-full w-10 h-10 text-white cursor-pointer flex items-center justify-center transition-colors disabled:opacity-50 ${isEscalated
-                  ? "bg-green-500 hover:bg-green-700"
-                  : "bg-blue-500 hover:bg-blue-700"
+                ? "bg-green-500 hover:bg-green-700"
+                : "bg-blue-500 hover:bg-blue-700"
                 }`}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
