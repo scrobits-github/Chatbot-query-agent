@@ -5,14 +5,11 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [tailwindcss(), react()],
   build: {
-    lib: {
-      entry: 'src/embed.jsx',
-      name: 'ChatbotWidget',
-      fileName: 'chatbot-widget',
-      formats: ['iife'],
-    },
     rollupOptions: {
-      external: [],
+      input: {
+        main: 'index.html',
+        chatbot: 'chatbot.html',
+      },
     },
   },
   define: {

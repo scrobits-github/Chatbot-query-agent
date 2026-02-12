@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 const API_URL =
+  new URLSearchParams(window.location.search).get("api_url") ||
   window.CHATBOT_API_URL ||
   document.currentScript?.getAttribute("api_url") ||
   "http://localhost:8000";
@@ -21,8 +22,17 @@ const FloatingChatbot = () => {
 
   const wsRef = useRef(null);
 
-  const toggleChat = () => setIsOpen(!isOpen);
-  const closeChat = () => setIsOpen(false);
+  const toggleChat = () => {
+    const newState = !isOpen;
+    setIsOpen(newState);
+    // Send message to parent iframe loader to resize
+    window.parent.postMessage({ type: 'CHATBOT_RESIZE', isOpen: newState }, '*');
+  };
+
+  const closeChat = () => {
+    setIsOpen(false);
+    window.parent.postMessage({ type: 'CHATBOT_RESIZE', isOpen: false }, '*');
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -186,7 +196,7 @@ const FloatingChatbot = () => {
   };
 
   return (
-    <div className="fixed bottom-28 right-25 z-[1000]">
+    <div className="absolute bottom-4 right-4 z-[1000]">
       <div
         className={`w-[60px] h-[60px] rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-all duration-300 text-white ${isOpen
           ? "bg-gradient-to-br from-red-500 to-red-700 hover:shadow-xl"
@@ -216,7 +226,7 @@ const FloatingChatbot = () => {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-[100px] right-[100px] w-[380px] h-[500px] bg-white rounded-xl shadow-2xl flex flex-col z-[999] overflow-hidden border border-gray-200 animate-slide-up">
+        <div className="absolute bottom-[80px] right-0 w-[380px] h-[500px] bg-white rounded-xl shadow-2xl flex flex-col z-[999] overflow-hidden border border-gray-200 animate-slide-up">
           {/* Header - changes based on escalation status */}
           <div
             className={`text-white p-4 flex justify-between items-center ${isEscalated

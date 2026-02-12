@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build:app": "vite build",
+    "build:loader": "vite build --config vite.loader.config.js",
+    "build": "npm run build:app && npm run build:loader",
     "deploy": "npm run build && vercel --prod",
     "lint": "eslint .",
     "preview": "vite preview"
