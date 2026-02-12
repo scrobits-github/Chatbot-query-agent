@@ -196,37 +196,10 @@ const FloatingChatbot = () => {
   };
 
   return (
-    <div className="absolute bottom-4 right-4 z-[1000]">
-      <div
-        className={`w-[60px] h-[60px] rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-all duration-300 text-white ${isOpen
-          ? "bg-gradient-to-br from-red-500 to-red-700 hover:shadow-xl"
-          : isEscalated
-            ? "bg-gradient-to-br from-green-500 to-green-700 hover:shadow-xl hover:scale-110"
-            : "bg-gradient-to-br from-blue-500 to-blue-700 hover:shadow-xl hover:scale-110"
-          }`}
-        onClick={toggleChat}
-      >
-        <svg
-          width="26"
-          height="26"
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="transition-transform duration-300 hover:scale-125"
-        >
-          <path
-            d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM20 16H5.17L4 17.17V4H20V16Z"
-            fill="currentColor"
-          />
-          <circle cx="8" cy="10" r="1" fill="currentColor" />
-          <circle cx="12" cy="10" r="1" fill="currentColor" />
-          <circle cx="16" cy="10" r="1" fill="currentColor" />
-        </svg>
-      </div>
-
-      {/* Chat Window */}
+    <div className="fixed inset-0 z-[1000] flex flex-col justify-end items-end pointer-events-none">
+      {/* Chat Window — fills the iframe when open */}
       {isOpen && (
-        <div className="absolute bottom-[80px] right-0 w-[380px] h-[500px] bg-white rounded-xl shadow-2xl flex flex-col z-[999] overflow-hidden border border-gray-200 animate-slide-up">
+        <div className="w-full h-full bg-white rounded-xl flex flex-col overflow-hidden border border-gray-200 animate-slide-up pointer-events-auto">
           {/* Header - changes based on escalation status */}
           <div
             className={`text-white p-4 flex justify-between items-center ${isEscalated
@@ -322,6 +295,46 @@ const FloatingChatbot = () => {
           </div>
         </div>
       )}
+
+      {/* Toggle Button — hidden when chat is open */}
+      {!isOpen && (
+        <div
+          className={`w-[60px] h-[60px] mt-[10px] rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-all duration-300 text-white pointer-events-auto ${isOpen
+            ? "bg-gradient-to-br from-red-500 to-red-700 hover:shadow-xl"
+            : isEscalated
+              ? "bg-gradient-to-br from-green-500 to-green-700 hover:shadow-xl hover:scale-110"
+              : "bg-gradient-to-br from-blue-500 to-blue-700 hover:shadow-xl hover:scale-110"
+            }`}
+          onClick={toggleChat}
+        >
+          <svg
+            width="26"
+            height="26"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="transition-transform duration-300 hover:scale-125"
+          >
+            {isOpen ? (
+              <path
+                d="M18 6L6 18M6 6L18 18"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            ) : (
+              <>
+                <path
+                  d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2ZM20 16H5.17L4 17.17V4H20V16Z"
+                  fill="currentColor"
+                />
+                <circle cx="8" cy="10" r="1" fill="currentColor" />
+                <circle cx="12" cy="10" r="1" fill="currentColor" />
+                <circle cx="16" cy="10" r="1" fill="currentColor" />
+              </>
+            )}
+          </svg>
+        </div>)}
     </div>
   );
 };

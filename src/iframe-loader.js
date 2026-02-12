@@ -1,65 +1,50 @@
 (function () {
-    // Config
-    // const CHATBOT_URL = 'http://localhost:5173/chatbot.html'; // For local dev
-    const CHATBOT_URL = 'https://chatbot-ui-chi-beryl.vercel.app/chatbot.html'; // Production URL - catch 22, update this after deploy or make dynamic based on script src?
-    // Ideally we infer the base URL from the script src so it works in both dev and prod
+    // Infer the base URL from the script's own src, so it works in both dev and prod
     const scriptTag = document.currentScript;
     const scriptSrc = scriptTag ? scriptTag.src : '';
-    const baseUrl = scriptSrc ? new URL(scriptSrc).origin : 'https://chatbot-ui-chi-beryl.vercel.app';
-
-    const IFRAME_URL = `${baseUrl}/chatbot.html`;
+    const scriptUrl = new URL(scriptSrc);
+    const basePath = scriptUrl.pathname.substring(0, scriptUrl.pathname.lastIndexOf('/'));
+    const baseOrigin = scriptUrl.origin;
+    const IFRAME_URL = `${baseOrigin}${basePath}/chatbot.html`;
 
     const apiUrl = scriptTag.getAttribute('api_url') || '';
 
     // Create iframe
     const iframe = document.createElement('iframe');
     iframe.src = `${IFRAME_URL}?api_url=${encodeURIComponent(apiUrl)}`;
+    iframe.setAttribute('allowtransparency', 'true');
+    iframe.setAttribute('allow', 'clipboard-write');
+    iframe.title = 'Chatbot Widget';
 
-    // Styles for the iframe to float over the page
+    // Styles for the iframe — starts as a small button-sized frame
     Object.assign(iframe.style, {
         position: 'fixed',
         bottom: '20px',
-        right: '25px', // Matching the React component's positioning approximately
-        width: '450px', // Enough for the chat window + button
-        height: '600px', // Enough for the chat window + button
+        right: '20px',
+        width: '70px',
+        height: '70px',
         border: 'none',
         zIndex: '999999',
         background: 'transparent',
-        pointerEvents: 'none', // Let clicks pass through when closed (we'll toggle this)
-        transition: 'all 0.3s ease'
+        colorScheme: 'none',
+        transition: 'width 0.3s ease, height 0.3s ease',
+        overflow: 'hidden',
     });
 
     document.body.appendChild(iframe);
 
-    // Communication with the iframe
+    // Listen for resize messages from the chatbot inside the iframe
     window.addEventListener('message', function (event) {
-        if (event.origin !== baseUrl) return;
-
-        // We can handle resize logic here if the iframe sends its size
-        // For now, we just keep the iframe large enough to contain the open state
-        // but pass-through clicks when it's "closed". 
-        // Wait... if pointer-events is none, we can't click the open button inside the iframe!
-
-        // Better approach: 
-        // The iframe should be small (just the button size) when closed, 
-        // and large when open.
+        if (event.origin !== baseOrigin) return;
 
         if (event.data.type === 'CHATBOT_RESIZE') {
             if (event.data.isOpen) {
                 iframe.style.width = '400px';
-                iframe.style.height = '600px';
-                iframe.style.pointerEvents = 'auto';
+                iframe.style.height = '620px';
             } else {
-                iframe.style.width = '80px';
-                iframe.style.height = '80px';
-                iframe.style.pointerEvents = 'auto';
+                iframe.style.width = '70px';
+                iframe.style.height = '70px';
             }
         }
     });
-
-    // Initial state - small button only
-    iframe.style.width = '80px';
-    iframe.style.height = '80px';
-    iframe.style.pointerEvents = 'auto';
-
 })();
