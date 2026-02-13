@@ -33,18 +33,57 @@
 
     document.body.appendChild(iframe);
 
+    // Responsive sizing helper
+    function getOpenSize() {
+        const vw = window.innerWidth;
+        if (vw <= 480) {
+            // Mobile: floating chat window, not full screen
+            return {
+                width: 'calc(100vw - 32px)',
+                height: '60vh',
+                right: '16px',
+                bottom: '16px'
+            };
+        } else if (vw <= 768) {
+            // Tablet
+            return { width: '380px', height: '580px', right: '20px', bottom: '20px' };
+        } else {
+            // Desktop
+            return { width: '400px', height: '620px', right: '20px', bottom: '20px' };
+        }
+    }
+
+    let isOpen = false;
+
     // Listen for resize messages from the chatbot inside the iframe
     window.addEventListener('message', function (event) {
         if (event.origin !== baseOrigin) return;
 
         if (event.data.type === 'CHATBOT_RESIZE') {
-            if (event.data.isOpen) {
-                iframe.style.width = '400px';
-                iframe.style.height = '620px';
+            isOpen = event.data.isOpen;
+            if (isOpen) {
+                const size = getOpenSize();
+                iframe.style.width = size.width;
+                iframe.style.height = size.height;
+                iframe.style.right = size.right;
+                iframe.style.bottom = size.bottom;
             } else {
                 iframe.style.width = '70px';
                 iframe.style.height = '70px';
+                iframe.style.right = '20px';
+                iframe.style.bottom = '20px';
             }
+        }
+    });
+
+    // Re-adapt when the browser window resizes
+    window.addEventListener('resize', function () {
+        if (isOpen) {
+            const size = getOpenSize();
+            iframe.style.width = size.width;
+            iframe.style.height = size.height;
+            iframe.style.right = size.right;
+            iframe.style.bottom = size.bottom;
         }
     });
 })();

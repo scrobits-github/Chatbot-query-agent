@@ -248,7 +248,7 @@ const FloatingChatbot = () => {
                   }`}
               >
                 <div
-                  className={`px-4 py-3 rounded-2xl break-normal leading-relaxed overflow-hidden [word-break:break-word] max-w-[85%] ${getMessageStyle(
+                  className={`px-4 py-3 rounded-2xl leading-relaxed [overflow-wrap:break-word] w-fit max-w-[85%] ${getMessageStyle(
                     msg.sender
                   )} markdown-content`}
                 >
@@ -302,8 +302,8 @@ const FloatingChatbot = () => {
           className={`w-[60px] h-[60px] mt-[10px] rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-all duration-300 text-white pointer-events-auto ${isOpen
             ? "bg-gradient-to-br from-red-500 to-red-700 hover:shadow-xl"
             : isEscalated
-              ? "bg-gradient-to-br from-green-500 to-green-700 hover:shadow-xl hover:scale-110"
-              : "bg-gradient-to-br from-blue-500 to-blue-700 hover:shadow-xl hover:scale-110"
+              ? "bg-gradient-to-br from-green-500 to-green-700 hover:shadow-xl"
+              : "bg-gradient-to-br from-blue-500 to-blue-700 hover:shadow-xl"
             }`}
           onClick={toggleChat}
         >
@@ -313,7 +313,7 @@ const FloatingChatbot = () => {
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className="transition-transform duration-300 hover:scale-125"
+            className="transition-transform duration-300"
           >
             {isOpen ? (
               <path
