@@ -11,7 +11,7 @@ const API_URL =
 const FloatingChatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { sender: "bot", text: "Namaste! Welcome to Amrut Paryatan. I can help you explore tourist destinations, travel services, emergency support, and travel information across Maharashtra. How can I assist you today?”" },
+    { sender: "bot", text: "Namaste! 🙏\n\nWelcome to Amrut Paryatan. \n\nI can help you explore tourist destinations, travel services, emergency support, and travel information across Maharashtra. \n\nHow can I assist you today?" },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
