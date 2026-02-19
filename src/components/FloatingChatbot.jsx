@@ -11,7 +11,7 @@ const API_URL =
 const FloatingChatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { sender: "bot", text: "Hello! How can I help you today?" },
+    { sender: "bot", text: "Namaste! Welcome to Amrut Paryatan. I can help you explore tourist destinations, travel services, emergency support, and travel information across Maharashtra. How can I assist you today?”" },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -167,7 +167,7 @@ const FloatingChatbot = () => {
       console.error("Error:", error);
       setMessages((prev) => [
         ...prev,
-        { sender: "bot", text: "Unable to connect to the server." },
+        { sender: "bot", text: "I am facing some technical issues at the moment please visit after sometime" },
       ]);
     } finally {
       setIsLoading(false);
@@ -248,7 +248,7 @@ const FloatingChatbot = () => {
                   }`}
               >
                 <div
-                  className={`px-4 py-3 rounded-2xl leading-relaxed [overflow-wrap:break-word] w-fit max-w-[85%] ${getMessageStyle(
+                  className={`px-4 py-3 rounded-2xl leading-relaxed [overflow-wrap:break-word] w-fit min-w-[60px] max-w-[85%] ${getMessageStyle(
                     msg.sender
                   )} markdown-content`}
                 >
@@ -257,7 +257,7 @@ const FloatingChatbot = () => {
               </div>
             ))}
             {isLoading && (
-              <div className="text-gray-500 text-sm italic mt-2">Typing...</div>
+              <div className="text-gray-500 text-sm italic mt-2">Just a moment… I’m finding the best travel information for you. </div>
             )}
             <div ref={messagesEndRef} />
           </div>
