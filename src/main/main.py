@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, Query, HTTPException, Response
 from settings import WHATSAPP_TOKEN, PHONE_NUMBER_ID
 from src.Workflow.workflow import workflow
+from src.Uploader.upload_api import upload
 import httpx
 import re
 
@@ -9,6 +10,10 @@ VERIFICATION_TOKEN = "my_super_secret_token_987"
 # query_agent = create_query_agent(api_key=GOOGLE_API_KEY)
 
 app = FastAPI()
+
+@app.post("/upload")
+def upload_file():
+    return upload()
 
 # --- Health check ---
 @app.get("/")

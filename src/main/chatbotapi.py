@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from src.Uploader.upload_api import upload_router
 from src.Workflow.workflow import workflow
 import re
 
@@ -19,6 +20,8 @@ app.add_middleware(
     allow_methods=["*"],  # important for POST, GET, OPTIONS, etc.
     allow_headers=["*"],  # allow headers like Content-Type, Authorization
 )
+
+app.include_router(upload_router)
 
 @app.get("/")
 def root():

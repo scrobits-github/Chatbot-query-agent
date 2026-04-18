@@ -52,12 +52,21 @@ class PineconeVectorIndex(VectorIndexStrategy):
         index = self.__api_key.Index(self.__collection_name)
         response = index.query(
             vector=embeded_query,
-            top_k=20,
+            top_k=50,
             include_metadata=True,
-            score_threshold=0.7
+            score_threshold=0.3
         )
         if response.get("matches"):
-            context = response["matches"][0]["metadata"].get("chunk_text", "")
+            # Combine top 10 matches to get better context
+            matches = response["matches"]
+            context_list = []
+            for match in matches[:10]:
+                text = match["metadata"].get("chunk_text", "")
+                if text:
+                    context_list.append(text)
+            
+            context = "\n\n---\n\n".join(context_list)
             return context or "No relevant context found for the question."
         else:
+            print("DEBUG: No matches found in Pinecone above threshold.")
             return "No relevant context found for the question."

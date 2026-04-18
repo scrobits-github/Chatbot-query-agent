@@ -4,7 +4,7 @@ from pathlib import Path
 
 load_dotenv(".env")
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent
 
 GOOGLE_API_KEY=getenv("GEMINI_API_KEY")
 PINECONE_API_KEY=getenv("PINECONE_API_KEY")
@@ -15,3 +15,6 @@ WHATSAPP_TOKEN=getenv("WA_ACCESS_TOKEN")
 PHONE_NUMBER_ID=getenv("WA_PHONE_NUMBER_ID")
 GUARDRAILS_API_KEY=getenv("GUARDRAILS_API_KEY")
 ORGANIZATION_NAME = getenv("ORGANIZATION_NAME")
+
+WEAVIATE_URL = getenv("WEAVIATE_URL")
+WEAVIATE_API_KEY = getenv("WEAVIATE_API_KEY")

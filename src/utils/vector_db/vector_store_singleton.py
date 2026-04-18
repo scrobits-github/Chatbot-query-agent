@@ -1,7 +1,8 @@
 from src.utils.vector_db.loader_strategies.base import DocumentLoaderStrategy
 from src.utils.vector_db.index_strategies.base import VectorIndexStrategy
 from langchain_experimental.text_splitter import SemanticChunker
-path = r"F:\ScroBits_Tech\Query-Agent\documents\MIREMS.pdf"
+from settings import BASE_DIR
+DOCUMENTS_FOLDER = BASE_DIR / "documents"
 
 class VectorStoreSingleton():
     _instance = None
@@ -25,15 +26,34 @@ class VectorStoreSingleton():
             self._initialized = True 
 
     def _build_vectorstore(self):
-        """Orchestrates the document loading and vector store creation."""
+        """Orchestrates the document loading and vector store creation for all files in the documents folder."""
         if self.vector_store is None:
             print("--- Building Vector Store ---")
+            
+            all_markdown = ""
+            # Search for both PDF and DOCX files
+            pdf_files = list(DOCUMENTS_FOLDER.glob("*.pdf"))
+            docx_files = list(DOCUMENTS_FOLDER.glob("*.docx"))
+            all_document_files = pdf_files + docx_files
+            
+            if not all_document_files:
+                print(f"Warning: No supported document files (.pdf, .docx) found in {DOCUMENTS_FOLDER}")
+                return None
 
-            documents_markdown = self.document_loader_strategy.load_documents(path = path)
+            for doc_path in all_document_files:
+                print(f"Indexing: {doc_path.name}")
+                try:
+                    all_markdown += self.document_loader_strategy.load_documents(path=doc_path) + "\n\n"
+                except Exception as e:
+                    print(f"Error loading {doc_path.name}: {e}")
+
+            if not all_markdown.strip():
+                print("No content extracted from documents.")
+                return None
 
             # Build or load the backing vector index using provided embeddings
             self.vector_store = self.vector_index_strategy.create_or_load_vector_index(
-                documents_markdown,
+                all_markdown,
                 chunker=self.chunker
             )
             print("--- Vector Store Built Successfully ---")
