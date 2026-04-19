@@ -6,12 +6,13 @@ const API_URL =
   new URLSearchParams(window.location.search).get("api_url") ||
   window.CHATBOT_API_URL ||
   document.currentScript?.getAttribute("api_url") ||
-  "http://localhost:8000";
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:8001";
 
 const FloatingChatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { sender: "bot", text: "Namaste! 🙏\n\nWelcome to Amrut Paryatan. \n\nI can help you explore tourist destinations, travel services, emergency support, and travel information across Maharashtra. \n\nHow can I assist you today?" },
+    { sender: "bot", text: "Welcome to InfiIoT" },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -185,13 +186,13 @@ const FloatingChatbot = () => {
   const getMessageStyle = (sender) => {
     switch (sender) {
       case "user":
-        return "bg-blue-500 text-white self-end rounded-br-none";
+        return "bg-orange-500 text-white self-end rounded-br-none";
       case "admin":
         return "bg-green-500 text-white self-start rounded-bl-none";
       case "system":
         return "bg-yellow-100 text-yellow-800 self-center text-center italic text-sm";
       default: // bot
-        return "bg-gray-100 text-gray-800 self-start rounded-bl-none";
+        return "bg-gray-100 text-gray-950 font-medium self-start rounded-bl-none";
     }
   };
 
@@ -204,7 +205,7 @@ const FloatingChatbot = () => {
           <div
             className={`text-white p-4 flex justify-between items-center ${isEscalated
               ? "bg-gradient-to-br from-green-500 to-green-700"
-              : "bg-gradient-to-br from-blue-500 to-blue-700"
+              : "bg-gradient-to-br from-orange-500 to-orange-700"
               }`}
           >
             <div className="flex items-center gap-3">
@@ -215,7 +216,7 @@ const FloatingChatbot = () => {
                 <h3 className="text-base font-semibold m-0">
                   {isEscalated ? "Live Support" : "AI Assistant"}
                 </h3>
-                <span className="text-xs opacity-80">
+                <span className="text-xs opacity-100 font-medium">
                   {isEscalated ? "Connected to Admin" : "Online"}
                 </span>
               </div>
@@ -257,7 +258,7 @@ const FloatingChatbot = () => {
               </div>
             ))}
             {isLoading && (
-              <div className="text-gray-500 text-sm italic mt-2">Just a moment… I’m finding the best travel information for you. </div>
+              <div className="text-gray-500 text-sm italic mt-2">Just a moment… I’m finding the best information for you. </div>
             )}
             <div ref={messagesEndRef} />
           </div>
@@ -272,14 +273,14 @@ const FloatingChatbot = () => {
                 isEscalated ? "Message admin..." : "Type your message..."
               }
               rows="1"
-              className="flex-1 border border-gray-300 rounded-2xl px-4 py-3 resize-none text-sm outline-none transition-colors min-h-[20px] max-h-[100px] focus:border-blue-500"
+              className="flex-1 border border-gray-300 rounded-2xl px-4 py-3 resize-none text-sm outline-none transition-colors min-h-[20px] max-h-[100px] focus:border-orange-500"
             />
             <button
               onClick={sendMessage}
               disabled={isLoading}
               className={`border-none rounded-full w-10 h-10 text-white cursor-pointer flex items-center justify-center transition-colors disabled:opacity-50 ${isEscalated
                 ? "bg-green-500 hover:bg-green-700"
-                : "bg-blue-500 hover:bg-blue-700"
+                : "bg-orange-500 hover:bg-orange-700"
                 }`}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -303,7 +304,7 @@ const FloatingChatbot = () => {
             ? "bg-gradient-to-br from-red-500 to-red-700 hover:shadow-xl"
             : isEscalated
               ? "bg-gradient-to-br from-green-500 to-green-700 hover:shadow-xl"
-              : "bg-gradient-to-br from-blue-500 to-blue-700 hover:shadow-xl"
+              : "bg-gradient-to-br from-orange-500 to-orange-700 hover:shadow-xl"
             }`}
           onClick={toggleChat}
         >
