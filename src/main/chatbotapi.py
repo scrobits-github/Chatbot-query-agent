@@ -1,14 +1,18 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from src.Uploader.upload_api import upload_router
 from src.Workflow.workflow import workflow
+from src.agents.widget_creation_agent import widget_creation_agent
+from typing import Optional
+import uuid
 import re
 
 app = FastAPI()
 
 class ChatRequest(BaseModel):
     user_message: str
+    session_id: Optional[str] = None
 
 class ChatResponse(BaseModel):
     response: str
@@ -29,7 +33,9 @@ def root():
 
 
 @app.post("/chatbot", response_model=ChatResponse)
-async def chatbot_endpoint(request: ChatRequest):
+async def chatbot_endpoint(
+    request: ChatRequest,
+):
     
     try:
         user_input = request.user_message
@@ -81,5 +87,38 @@ async def chatbot_endpoint(request: ChatRequest):
 
     except Exception as e:
         print("Error in /chatbot:", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/chatbot/create-widget", response_model=ChatResponse)
+async def create_widget_endpoint(
+    request: ChatRequest,
+    authorization: Optional[str] = Header(default=None),
+):
+    try:
+        user_input = request.user_message
+        auth_token = None
+        if authorization and authorization.lower().startswith("bearer "):
+            auth_token = authorization.split(" ", 1)[1].strip()
+
+        session_id = request.session_id or (f"token-{auth_token}" if auth_token else f"session-{uuid.uuid4()}")
+
+        widget_result = widget_creation_agent.handle_message(
+            user_message=user_input,
+            session_id=session_id,
+            auth_token=auth_token,
+        )
+        if widget_result.get("handled"):
+            return ChatResponse(response=str(widget_result.get("response", "")))
+
+        return ChatResponse(
+            response=(
+                "This endpoint is for widget creation only. "
+                "Please provide a create-widget request, for example: "
+                "'create gauge widget dashboard 1 project 5 variable temperature'."
+            )
+        )
+    except Exception as e:
+        print("Error in /chatbot/create-widget:", e)
         raise HTTPException(status_code=500, detail=str(e))
 # python -m uvicorn src.main.chatbotapi:app --reload

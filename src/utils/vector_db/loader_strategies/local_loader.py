@@ -12,8 +12,9 @@ class LocalLoader(DocumentLoaderStrategy):
             pages = loader.load()
             return "\n".join([page.page_content for page in pages])
         
-        elif file_ext == ".docx":
-            # Use Docx2txtLoader for Word files
+        elif file_ext == ".docx" or file_ext == ".doc":
+            # Use Docx2txtLoader for Word files (.docx)
+            # Note: docx2txt primarily supports .docx
             loader = Docx2txtLoader(str(path))
             pages = loader.load()
             return "\n".join([page.page_content for page in pages])

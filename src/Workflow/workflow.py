@@ -5,7 +5,7 @@ from src.agents.evaluator_agent import evaluator_agent
 from src.agents.retriver_agent import retriver_agent
 from src.schemas.response_schema import ResponseSchema
 
-model = ChatGoogleGenerativeAI(model="gemini-2.5-flash",google_api_key = GOOGLE_API_KEY)
+model = ChatGoogleGenerativeAI(model="gemini-2.0-flash",google_api_key = GOOGLE_API_KEY)
 
 def evaluation_edge(state: ResponseSchema):
     return "retriver_agent" if state["evaluation_state"] == "False" else END

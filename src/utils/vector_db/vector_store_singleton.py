@@ -1,6 +1,6 @@
 from src.utils.vector_db.loader_strategies.base import DocumentLoaderStrategy
 from src.utils.vector_db.index_strategies.base import VectorIndexStrategy
-from langchain_experimental.text_splitter import SemanticChunker
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from settings import BASE_DIR
 DOCUMENTS_FOLDER = BASE_DIR / "documents"
 
@@ -19,10 +19,10 @@ class VectorStoreSingleton():
             self.embeddings_model = embeddings_model
             self.document_loader_strategy = document_loader_strategy
             self.vector_index_strategy = vector_index_strategy
-            self.text_splitter = SemanticChunker(embeddings_model, breakpoint_threshold_type="percentile")
-            def semantic_chunker(markdown_text: str):
+            self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+            def character_chunker(markdown_text: str):
                 return self.text_splitter.create_documents([markdown_text])
-            self.chunker = semantic_chunker
+            self.chunker = character_chunker
             self._initialized = True 
 
     def _build_vectorstore(self):
@@ -31,13 +31,14 @@ class VectorStoreSingleton():
             print("--- Building Vector Store ---")
             
             all_markdown = ""
-            # Search for both PDF and DOCX files
+            # Search for PDF, DOCX, and DOC files
             pdf_files = list(DOCUMENTS_FOLDER.glob("*.pdf"))
             docx_files = list(DOCUMENTS_FOLDER.glob("*.docx"))
-            all_document_files = pdf_files + docx_files
+            doc_files = list(DOCUMENTS_FOLDER.glob("*.doc"))
+            all_document_files = pdf_files + docx_files + doc_files
             
             if not all_document_files:
-                print(f"Warning: No supported document files (.pdf, .docx) found in {DOCUMENTS_FOLDER}")
+                print(f"Warning: No supported document files (.pdf, .docx, .doc) found in {DOCUMENTS_FOLDER}")
                 return None
 
             for doc_path in all_document_files:
