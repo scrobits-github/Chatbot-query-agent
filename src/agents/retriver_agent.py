@@ -1,3 +1,5 @@
+"""Retriever agent node: calls query_agent to fetch RAG context and draft an answer."""
+
 from src.schemas.response_schema import ResponseSchema
 from settings import GOOGLE_API_KEY
 from src.agents.query_agent import create_query_agent
@@ -17,5 +19,8 @@ def retriver_agent(state: ResponseSchema) -> ResponseSchema:
         "query_response": response_str,
         "evaluation_state": "",
         "retry_count": state["retry_count"] + 1,
-        "instruction": instruction
+        "instruction": instruction,
+        "route": state.get("route", "rag"),
+        "session_id": state.get("session_id", ""),
+        "auth_token": state.get("auth_token", ""),
     }

@@ -9,6 +9,7 @@ dependencies = [
     "docling>=2.57.0",
     "docx2txt>=0.9",
     "fastapi>=0.116.1",
+    "grandalf>=0.8",
     "guardrails-ai>=0.6.7",
     "hf-xet>=1.1.9",
     "joblib>=1.5.2",
