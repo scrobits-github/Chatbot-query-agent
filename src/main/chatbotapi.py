@@ -94,6 +94,7 @@ async def chatbot_endpoint(
             "instruction": "",
             "session_id": session_id,
             "auth_token": auth_token or "",
+            "is_login": 0,
         }
 
         final_state = workflow.invoke(initial_state, config={"verbose": True})

@@ -11,3 +11,4 @@ class ResponseSchema(TypedDict):
     route: NotRequired[Literal["rag", "infiiot", "greeting"]]
     session_id: NotRequired[str]
     auth_token: NotRequired[str]
+    is_login: NotRequired[int]
