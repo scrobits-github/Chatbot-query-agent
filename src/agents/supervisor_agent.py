@@ -1,19 +1,25 @@
 """
 Supervisor agent: decides which downstream path handles the user message.
+Uses dynamic LLM routing with Gemini-2.0-flash, falling back to instant
+predictable keyword rules on API or connection errors.
 
 Routes:
 - RAG: document Q&A (retriever -> evaluator).
 - GREETING: short hi/hello only — skip retriever, prefill reply, then evaluator.
 - INFIIOT: dashboards, variables, widget mapping, widget creation (Infiiot agent).
-
-This module uses lightweight keyword rules (no extra LLM call) so routing is fast
-and predictable. You can later replace route() with a small LLM classifier.
 """
 
 from __future__ import annotations
 
 import re
+import logging
 from typing import Literal
+
+from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
+from settings import GOOGLE_API_KEY
+
+logger = logging.getLogger(__name__)
 
 Route = Literal["rag", "infiiot", "greeting"]
 
@@ -21,7 +27,6 @@ Route = Literal["rag", "infiiot", "greeting"]
 def is_simple_greeting(user_message: str) -> bool:
     """
     True for very short, obvious greetings (hi/hello/hey/good morning/how are you).
-    Long or topic-heavy text is never a greeting, so RAG is used instead.
     """
     t = (user_message or "").strip().lower()
     if not t or len(t) > 100:
@@ -35,27 +40,15 @@ def is_simple_greeting(user_message: str) -> bool:
     return any(re.match(p, t) for p in patterns)
 
 
-def route(user_message: str, infiiot_session_active: bool = False) -> Route:
+def _fallback_rule_based_route(user_message: str) -> Route:
     """
-    Classify user_message into one of: rag, infiiot, greeting.
-
-    Decision order is intentional:
-    1) Keep active Infiiot sessions pinned to Infiiot.
-    2) Match clear Infiiot keywords/patterns.
-    3) Detect short greetings.
-    4) Fallback to RAG for all other text.
-
-    If infiiot_session_active is True, keep routing to Infiiot so short follow-ups
-    like "dashboard 1" or "yes" are not misclassified as RAG.
+    Backup rule-based classifier that handles routing with 100% uptime and speed.
     """
-    if infiiot_session_active:
-        return "infiiot"
-
     text = (user_message or "").strip().lower()
     if not text:
         return "rag"
 
-    # --- Infiiot intent signals (extend this list as product grows) ---
+    # --- Infiiot intent signals ---
     infiiot_keywords = (
         "widget",
         "dashboard",
@@ -73,9 +66,6 @@ def route(user_message: str, infiiot_session_active: bool = False) -> Route:
     if any(k in text for k in infiiot_keywords):
         return "infiiot"
 
-    # Short commands like "project 5 variable temp" during widget flow land here if no keyword;
-    # digits + project/variable hints still belong to Infiiot if session already active — handled in agent.
-
     if re.search(r"\b(project|variable|dashboard)\s*\d+", text):
         return "infiiot"
 
@@ -83,3 +73,56 @@ def route(user_message: str, infiiot_session_active: bool = False) -> Route:
         return "greeting"
 
     return "rag"
+
+
+def route(user_message: str, infiiot_session_active: bool = False) -> Route:
+    """
+    Dynamically classify user_message into one of: rag, infiiot, greeting using Gemini.
+    If infiiot_session_active is True, keeps routing pinned to infiiot to preserve context.
+    """
+    # 1. Keep active Infiiot sessions pinned to Infiiot
+    if infiiot_session_active:
+        return "infiiot"
+
+    text = (user_message or "").strip()
+    if not text:
+        return "rag"
+
+    # 2. If no API key is set, instantly use rule-based fallback
+    if not GOOGLE_API_KEY:
+        return _fallback_rule_based_route(text)
+
+    # 3. Dynamic classification using Gemini-2.0-flash
+    try:
+        llm = ChatGoogleGenerativeAI(
+            model="gemini-2.5-flash",
+            temperature=0.0,
+            google_api_key=GOOGLE_API_KEY,
+            max_retries=1,
+        )
+
+        system_prompt = """You are an intelligent supervisor router for a multi-agent system.
+Your job is to classify the user's message into exactly one of three routing destinations:
+
+1. "infiiot": If the user wants to manage, create, view, list, or check widgets, dashboards, variables, projects, devices, charts, gauges, sliders, switches, mappings, or variables in the InfiIoT platform.
+2. "greeting": If the user message is a simple hello, hi, hey, how are you, or general small talk opener.
+3. "rag": If the user is asking a question about document content, policies, facts, or any general information that requires searching the knowledge base.
+
+Respond with ONLY one word, either "infiiot", "greeting", or "rag". Do not add any punctuation or extra text.
+"""
+
+        response = llm.invoke([
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=text)
+        ])
+
+        result = str(response.content).strip().lower()
+        if result in ["infiiot", "greeting", "rag"]:
+            return result
+
+        # Fallback if the LLM response is corrupted or unexpected
+        return _fallback_rule_based_route(text)
+
+    except Exception as e:
+        logger.warning(f"Gemini routing failed: {e}. Falling back to rule-based routing.")
+        return _fallback_rule_based_route(text)

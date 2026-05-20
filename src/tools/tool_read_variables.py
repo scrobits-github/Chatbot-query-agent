@@ -1,6 +1,6 @@
 import json
 from langchain.tools import tool
-from src.infiiot.db_readonly import fetch_project_variables_for_user, resolve_user_id_from_token
+from src.infiiot.db_readonly import fetch_variables_for_user_projects, resolve_user_id_from_token
 
 @tool
 def fetch_project_variables_tool(auth_token: str) -> str:
@@ -12,5 +12,6 @@ def fetch_project_variables_tool(auth_token: str) -> str:
     if not user_id:
         return json.dumps({"ok": False, "message": "Invalid token"})
         
-    variables = fetch_project_variables_for_user(user_id)
+    variables = fetch_variables_for_user_projects(user_id)
     return json.dumps({"ok": True, "variables": variables})
+

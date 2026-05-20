@@ -6,7 +6,7 @@ from src.utils.yaml_loader import load_prompts
 from settings import ORGANIZATION_NAME
 
 def create_query_agent(
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash",
     temperature=0.1,
     api_key=None,
     prompt_path="src/utils/prompts.yml"
