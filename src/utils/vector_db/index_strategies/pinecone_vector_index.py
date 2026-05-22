@@ -9,11 +9,25 @@ class PineconeVectorIndex(VectorIndexStrategy):
         self.__embeddings = embeddings
         self.__collection = False
 
+    def has_existing_vectors(self) -> bool:
+        try:
+            index = self.__api_key.Index(self.__collection_name)
+            stats = index.describe_index_stats()
+            return stats.get('total_vector_count', 0) > 0
+        except Exception:
+            return False
+
     def create_or_load_vector_index(self, markdown_text: str, chunker=None):
         if self.__collection:
             return self
 
         index = self.__api_key.Index(self.__collection_name)
+        
+        # If markdown_text is empty, we are loading the cloud index directly
+        if not markdown_text.strip():
+            self.__collection = True
+            return self
+
         # Use provided chunker callable if supplied; it may return Documents or strings
         if chunker is not None:
             chunk_outputs = chunker(markdown_text)

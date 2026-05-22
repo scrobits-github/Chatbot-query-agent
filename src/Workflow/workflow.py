@@ -43,7 +43,7 @@ def _generate_greeting_reply(user_message: str) -> str:
         return _GREETING_REPLY
     try:
         llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             google_api_key=GOOGLE_API_KEY,
             temperature=0.7,
             max_retries=1,

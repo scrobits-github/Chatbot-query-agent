@@ -30,15 +30,24 @@ class VectorStoreSingleton():
         if self.vector_store is None:
             print("--- Building Vector Store ---")
             
+            # Direct cloud loading: skip heavy parsing if index already exists
+            if hasattr(self.vector_index_strategy, "has_existing_vectors") and self.vector_index_strategy.has_existing_vectors():
+                print("Pinecone index already contains vectors. Loading cloud index instantly!")
+                self.vector_store = self.vector_index_strategy.create_or_load_vector_index("")
+                print("--- Vector Store Loaded from Cloud Instantly ---")
+                return self.vector_store
+
             all_markdown = ""
-            # Search for PDF, DOCX, and DOC files
+            # Search for PDF, DOCX, DOC, TXT, and MD files
             pdf_files = list(DOCUMENTS_FOLDER.glob("*.pdf"))
             docx_files = list(DOCUMENTS_FOLDER.glob("*.docx"))
             doc_files = list(DOCUMENTS_FOLDER.glob("*.doc"))
-            all_document_files = pdf_files + docx_files + doc_files
+            txt_files = list(DOCUMENTS_FOLDER.glob("*.txt"))
+            md_files = list(DOCUMENTS_FOLDER.glob("*.md"))
+            all_document_files = pdf_files + docx_files + doc_files + txt_files + md_files
             
             if not all_document_files:
-                print(f"Warning: No supported document files (.pdf, .docx, .doc) found in {DOCUMENTS_FOLDER}")
+                print(f"Warning: No supported document files (.pdf, .docx, .doc, .txt, .md) found in {DOCUMENTS_FOLDER}")
                 return None
 
             for doc_path in all_document_files:

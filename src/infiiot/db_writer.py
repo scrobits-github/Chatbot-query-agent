@@ -135,11 +135,17 @@ def create_variable_direct(user_id: int, project_name: str, variable_name: Optio
         ).first()
 
         if not project:
+            # Get existing token_id_id for this user to maintain session consistency
+            existing_project = session.query(ProjectDir).filter(ProjectDir.user_id_id == user_id).first()
+            token_id_val = existing_project.token_id_id if existing_project else 6
+
             # If project doesn't exist, create it automatically
             project = ProjectDir(
                 user_id_id=user_id,
                 project_name=project_name,
-                project_id=f"{project_name}_{user_id}"
+                project_id=f"{project_name}_{user_id}",
+                token_id_id=token_id_val,
+                mac_id="Default MAC Id"
             )
             session.add(project)
             session.flush() # Flush to generate the 'id' for use below

@@ -19,6 +19,10 @@ class LocalLoader(DocumentLoaderStrategy):
             pages = loader.load()
             return "\n".join([page.page_content for page in pages])
         
+        elif file_ext == ".txt" or file_ext == ".md":
+            with open(path, "r", encoding="utf-8") as f:
+                return f.read()
+        
         else:
             raise ValueError(f"Unsupported file extension: {file_ext}")
 
