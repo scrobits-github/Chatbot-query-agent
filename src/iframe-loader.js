@@ -8,10 +8,12 @@
     const IFRAME_URL = `${baseOrigin}${basePath}/chatbot.html`;
 
     const apiUrl = scriptTag.getAttribute('api_url') || '';
+    const token = localStorage.getItem('infiiot_token') || '';
 
     // Create iframe
     const iframe = document.createElement('iframe');
-    iframe.src = `${IFRAME_URL}?api_url=${encodeURIComponent(apiUrl)}`;
+    const parentOrigin = window.location.origin;
+    iframe.src = `${IFRAME_URL}?api_url=${encodeURIComponent(apiUrl)}&token=${encodeURIComponent(token)}&parent_origin=${encodeURIComponent(parentOrigin)}`;
     iframe.setAttribute('allowtransparency', 'true');
     iframe.setAttribute('allow', 'clipboard-write');
     iframe.title = 'Chatbot Widget';
@@ -55,7 +57,7 @@
 
     let isOpen = false;
 
-    // Listen for resize messages from the chatbot inside the iframe
+    // Listen for messages from the chatbot inside the iframe
     window.addEventListener('message', function (event) {
         if (event.origin !== baseOrigin) return;
 
@@ -73,6 +75,9 @@
                 iframe.style.right = '20px';
                 iframe.style.bottom = '20px';
             }
+        } else if (event.data.type === 'CHATBOT_REDIRECT') {
+            console.log("Redirecting parent page to:", event.data.url);
+            window.location.href = event.data.url;
         }
     });
 

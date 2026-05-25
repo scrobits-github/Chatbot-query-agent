@@ -9,6 +9,12 @@ const API_URL =
   import.meta.env.VITE_API_BASE_URL ||
   "http://localhost:8001";
 
+const AUTH_TOKEN =
+  new URLSearchParams(window.location.search).get("token") || "";
+
+const PARENT_ORIGIN =
+  new URLSearchParams(window.location.search).get("parent_origin") || "http://127.0.0.1:8000";
+
 const FloatingChatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
@@ -20,6 +26,9 @@ const FloatingChatbot = () => {
 
   // WebSocket escalation state
   const [isEscalated, setIsEscalated] = useState(false);
+
+  // Pending redirection URL state
+  const [pendingRedirectUrl, setPendingRedirectUrl] = useState(null);
 
   const wsRef = useRef(null);
 
@@ -124,6 +133,47 @@ const FloatingChatbot = () => {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
+    const userMsgText = input.trim().toLowerCase();
+
+    // Intercept yes/no locally if there is a pending redirection URL
+    if (pendingRedirectUrl && (userMsgText === "yes" || userMsgText === "sure" || userMsgText === "ok" || userMsgText === "confirm" || userMsgText === "proceed" || userMsgText === "yees" || userMsgText === "ho")) {
+      const userMessage = { sender: "user", text: input };
+      setMessages((prev) => [...prev, userMessage]);
+      setInput("");
+
+      // Extract the pending target URL and clear state immediately
+      const targetUrl = pendingRedirectUrl;
+      setPendingRedirectUrl(null);
+
+      // Append bot local redirecting response
+      setMessages((prev) => [...prev, { sender: "bot", text: "Great! Redirecting you to your new dashboard now..." }]);
+
+      // Perform redirection safely and securely across origins!
+      setTimeout(() => {
+        try {
+          // 1. Tell parent iframe loader to redirect
+          window.parent.postMessage({ type: 'CHATBOT_REDIRECT', url: targetUrl }, '*');
+          
+          // 2. Fallback direct browser-level parent frame redirection
+          window.open(targetUrl, "_parent");
+        } catch (err) {
+          console.error("Redirection failed, fallback to location change:", err);
+          window.location.href = targetUrl;
+        }
+      }, 1000);
+      return;
+    }
+
+    if (pendingRedirectUrl && (userMsgText === "no" || userMsgText === "cancel" || userMsgText === "naka" || userMsgText === "nako")) {
+      const userMessage = { sender: "user", text: input };
+      setMessages((prev) => [...prev, userMessage]);
+      setInput("");
+      setPendingRedirectUrl(null);
+
+      setMessages((prev) => [...prev, { sender: "bot", text: "Alright! Let me know if you need anything else." }]);
+      return;
+    }
+
     const userMessage = { sender: "user", text: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
@@ -138,9 +188,15 @@ const FloatingChatbot = () => {
     setIsLoading(true);
 
     try {
+      const headers = { "Content-Type": "application/json" };
+      if (AUTH_TOKEN) {
+        headers["Authorization"] = `Bearer ${AUTH_TOKEN}`;
+        headers["token"] = AUTH_TOKEN;
+      }
+
       const res = await fetch(`${API_URL.replace(/\/$/, "")}/chatbot`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: headers,
         body: JSON.stringify({ user_message: userMessage.text }),
       });
 
@@ -163,6 +219,15 @@ const FloatingChatbot = () => {
         // Normal flow
         const botMessage = { sender: "bot", text: data.response };
         setMessages((prev) => [...prev, botMessage]);
+
+        // Auto-detect newly created dashboard if URL pattern matches
+        const redirectMatch = data.response.match(/\/dashboard\/\?dashboard_id=(\d+)/);
+        if (redirectMatch) {
+          const dashboardId = redirectMatch[1];
+          const targetUrl = `${PARENT_ORIGIN}/dashboard/?dashboard_id=${dashboardId}`;
+          console.log("Detected dashboard redirection link. Storing pending redirect URL:", targetUrl);
+          setPendingRedirectUrl(targetUrl);
+        }
       }
     } catch (error) {
       console.error("Error:", error);
@@ -253,7 +318,25 @@ const FloatingChatbot = () => {
                     msg.sender
                   )} markdown-content`}
                 >
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      a: ({ node, href, ...props }) => {
+                        const isRelative = href && href.startsWith("/");
+                        const targetHref = isRelative ? `${PARENT_ORIGIN}${href}` : href;
+                        return (
+                          <a 
+                            {...props} 
+                            href={targetHref}
+                            target="_parent" 
+                            className="text-orange-600 hover:text-orange-800 underline font-semibold transition-colors"
+                          />
+                        );
+                      }
+                    }}
+                  >
+                    {msg.text.replace(/\[[^\]]*\]\(\/dashboard\/\?dashboard_id=\d+\)/g, "")}
+                  </ReactMarkdown>
                 </div>
               </div>
             ))}
