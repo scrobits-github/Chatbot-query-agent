@@ -156,11 +156,11 @@ Instructions:
    - If the user cancels, do not call the tool and say "Cancelled."
 
 5. Direct Redirection Link after Success:
-   - Whenever you successfully configure or add widgets to a dashboard (i.e., after calling `tool_auto_create_device_widgets`), you MUST include a clean Markdown redirection link in your final response.
-   - The link text must be descriptive and the URL MUST point to `/dashboard/` so that the frontend parent window can smoothly redirect the user.
-   - Example ending: "Your dashboard is now configured! [Click here to open your Dashboard](/dashboard/)"
+   - Whenever you successfully configure or add widgets to a dashboard (i.e., after calling `tool_auto_create_device_widgets`), you MUST check the tool output for the created dashboard's database ID (`dashboard_db_id`).
+   - You MUST include a clean Markdown redirection link in your final response pointing specifically to: `/dashboard/?dashboard_id=<dashboard_db_id>` (where `<dashboard_db_id>` is replaced by the actual database ID value from the tool output).
+   - Example ending: "Your dashboard is now configured! [Click here to open your Dashboard](/dashboard/?dashboard_id=8)" (where 8 is replaced by the actual `dashboard_db_id` from the tool output).
 
-6. Handling Generic/Vague Queries (e.g., "create widget", "set up dashboard"):
+6. Handling Generic/Vague Queries (e.g., "create widget", "set up a dashboard"):
    - If the user's query is vague or generic (like just "create widget" or "set up a dashboard"), do NOT just ask them for inputs blindly.
    - Instead, immediately call `fetch_dashboard_summary_tool` and `fetch_project_variables_tool` in parallel to see what dashboards and projects/variables they already have in the database.
    - If they have exactly one project and one dashboard, suggest: "I see you have device '[ProjectName]' and dashboard '[DashboardName]'. Would you like me to automatically configure widgets for its variables ([list of variables like Temperature, etc.])? Reply 'yes' or 'confirm' to set it up!"
