@@ -3,13 +3,19 @@ from datetime import datetime, timedelta, timezone
 import random
 import time
 
+import os
+from dotenv import load_dotenv
+
+# Load configurations from .env
+load_dotenv(".env")
+
 def get_db_connection():
     return psycopg2.connect(
-        host="localhost",
-        port=5432,
-        dbname="postgres",
-        user="akshay",
-        password="pass@123"
+        host=os.getenv("AI_DB_HOST", "localhost"),
+        port=int(os.getenv("AI_DB_PORT", 5432)),
+        dbname=os.getenv("AI_DB_NAME", "postgres"),
+        user=os.getenv("AI_DB_USER", "akshay"),
+        password=os.getenv("AI_DB_PASSWORD", "pass@123")
     )
 
 def auto_generate_telemetry():
