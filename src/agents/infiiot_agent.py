@@ -155,13 +155,18 @@ Instructions:
      * Call `tool_auto_create_device_widgets` to create the widgets in a single batch.
    - If the user cancels, do not call the tool and say "Cancelled."
 
-5. Handling Generic/Vague Queries (e.g., "create widget", "set up dashboard"):
+5. Direct Redirection Link after Success:
+   - Whenever you successfully configure or add widgets to a dashboard (i.e., after calling `tool_auto_create_device_widgets`), you MUST include a clean Markdown redirection link in your final response.
+   - The link text must be descriptive and the URL MUST point to `/dashboard/` so that the frontend parent window can smoothly redirect the user.
+   - Example ending: "Your dashboard is now configured! [Click here to open your Dashboard](/dashboard/)"
+
+6. Handling Generic/Vague Queries (e.g., "create widget", "set up dashboard"):
    - If the user's query is vague or generic (like just "create widget" or "set up a dashboard"), do NOT just ask them for inputs blindly.
    - Instead, immediately call `fetch_dashboard_summary_tool` and `fetch_project_variables_tool` in parallel to see what dashboards and projects/variables they already have in the database.
    - If they have exactly one project and one dashboard, suggest: "I see you have device '[ProjectName]' and dashboard '[DashboardName]'. Would you like me to automatically configure widgets for its variables ([list of variables like Temperature, etc.])? Reply 'yes' or 'confirm' to set it up!"
    - If they have multiple, present the list of available devices and dashboards, and ask which one they want to set up (e.g., "Would you like me to automatically set up 'MyDevice' on 'Test Dashboard'?").
 
-6. Be concise, direct, and professional in all responses.
+7. Be concise, direct, and professional in all responses.
 """
 
         prompt = ChatPromptTemplate.from_messages([
