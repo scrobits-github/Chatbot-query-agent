@@ -17,7 +17,8 @@ from typing import Literal
 
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
-from settings import GOOGLE_API_KEY
+from settings import BASE_DIR, GOOGLE_API_KEY
+from src.utils.yaml_loader import load_prompts
 
 logger = logging.getLogger(__name__)
 
@@ -101,15 +102,8 @@ def route(user_message: str, infiiot_session_active: bool = False) -> Route:
             max_retries=1,
         )
 
-        system_prompt = """You are an intelligent supervisor router for a multi-agent system.
-Your job is to classify the user's message into exactly one of three routing destinations:
-
-1. "infiiot": If the user wants to manage, create, view, list, or check widgets, dashboards, variables, projects, devices, charts, gauges, sliders, switches, mappings, or variables in the InfiIoT platform.
-2. "greeting": If the user message is a simple hello, hi, hey, how are you, or general small talk opener.
-3. "rag": If the user is asking a question about document content, policies, facts, or any general information that requires searching the knowledge base.
-
-Respond with ONLY one word, either "infiiot", "greeting", or "rag". Do not add any punctuation or extra text.
-"""
+        prompts = load_prompts(str(BASE_DIR / "src" / "utils" / "prompts.yml"))
+        system_prompt = prompts.get("supervisor_agent_prompt")
 
         response = llm.invoke([
             SystemMessage(content=system_prompt),
