@@ -11,11 +11,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Database Connection
-DB_USER = os.getenv("AI_DB_USER", "akshay")
-DB_PASS = os.getenv("AI_DB_PASSWORD", "pass@123")
-DB_HOST = os.getenv("AI_DB_HOST", "localhost")
+DB_USER = os.getenv("AI_DB_USER")
+DB_PASS = os.getenv("AI_DB_PASSWORD")
+DB_HOST = os.getenv("AI_DB_HOST")
 DB_PORT = os.getenv("AI_DB_PORT", "5432")
-DB_NAME = os.getenv("AI_DB_NAME", "postgres")
+DB_NAME = os.getenv("AI_DB_NAME")
+
+if not all([DB_USER, DB_PASS, DB_HOST, DB_NAME]):
+    raise RuntimeError(
+        "Missing critical database environment configuration (AI_DB_USER, AI_DB_PASSWORD, AI_DB_HOST, AI_DB_NAME)."
+    )
 
 # --- DATABASE CONFIGURATION ---
 # We use quote_plus to handle special characters (like '@' or '#') in the DB password

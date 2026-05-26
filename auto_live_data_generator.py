@@ -10,12 +10,21 @@ from dotenv import load_dotenv
 load_dotenv(".env")
 
 def get_db_connection():
+    host = os.getenv("AI_DB_HOST")
+    port = os.getenv("AI_DB_PORT", "5432")
+    dbname = os.getenv("AI_DB_NAME")
+    user = os.getenv("AI_DB_USER")
+    password = os.getenv("AI_DB_PASSWORD")
+
+    if not all([host, dbname, user, password]):
+        raise RuntimeError("Missing required database connection environment variables (AI_DB_HOST, AI_DB_NAME, AI_DB_USER, AI_DB_PASSWORD).")
+
     return psycopg2.connect(
-        host=os.getenv("AI_DB_HOST", "localhost"),
-        port=int(os.getenv("AI_DB_PORT", 5432)),
-        dbname=os.getenv("AI_DB_NAME", "postgres"),
-        user=os.getenv("AI_DB_USER", "akshay"),
-        password=os.getenv("AI_DB_PASSWORD", "pass@123")
+        host=host,
+        port=int(port),
+        dbname=dbname,
+        user=user,
+        password=password
     )
 
 def auto_generate_telemetry():
