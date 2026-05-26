@@ -5,17 +5,14 @@ import remarkGfm from "remark-gfm";
 const API_URL =
   new URLSearchParams(window.location.search).get("api_url") ||
   window.CHATBOT_API_URL ||
-  document.currentScript?.getAttribute("api_url") ||
-  import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.DEV ? "http://localhost:8001" : window.location.origin);
+  import.meta.env.VITE_API_BASE_URL;
 
 const AUTH_TOKEN =
   new URLSearchParams(window.location.search).get("token") || "";
 
 const PARENT_ORIGIN =
   new URLSearchParams(window.location.search).get("parent_origin") ||
-  import.meta.env.VITE_PARENT_ORIGIN ||
-  (import.meta.env.DEV ? "http://127.0.0.1:8000" : window.location.origin);
+  import.meta.env.VITE_PARENT_ORIGIN;
 
 const FloatingChatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -138,7 +135,7 @@ const FloatingChatbot = () => {
     const userMsgText = input.trim().toLowerCase();
 
     // Intercept yes/no locally if there is a pending redirection URL
-    if (pendingRedirectUrl && (userMsgText === "yes" || userMsgText === "sure" || userMsgText === "ok" || userMsgText === "confirm" || userMsgText === "proceed" || userMsgText === "yees" || userMsgText === "ho")) {
+    if (pendingRedirectUrl && (userMsgText === "yes" || userMsgText === "sure" || userMsgText === "ok" || userMsgText === "confirm" || userMsgText === "proceed" || userMsgText === "yep" || userMsgText === "yeah")) {
       const userMessage = { sender: "user", text: input };
       setMessages((prev) => [...prev, userMessage]);
       setInput("");
@@ -166,7 +163,7 @@ const FloatingChatbot = () => {
       return;
     }
 
-    if (pendingRedirectUrl && (userMsgText === "no" || userMsgText === "cancel" || userMsgText === "naka" || userMsgText === "nako")) {
+    if (pendingRedirectUrl && (userMsgText === "no" || userMsgText === "cancel" || userMsgText === "nope")) {
       const userMessage = { sender: "user", text: input };
       setMessages((prev) => [...prev, userMessage]);
       setInput("");
