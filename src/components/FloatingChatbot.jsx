@@ -7,13 +7,15 @@ const API_URL =
   window.CHATBOT_API_URL ||
   document.currentScript?.getAttribute("api_url") ||
   import.meta.env.VITE_API_BASE_URL ||
-  "http://localhost:8001";
+  (import.meta.env.DEV ? "http://localhost:8001" : window.location.origin);
 
 const AUTH_TOKEN =
   new URLSearchParams(window.location.search).get("token") || "";
 
 const PARENT_ORIGIN =
-  new URLSearchParams(window.location.search).get("parent_origin") || "http://127.0.0.1:8000";
+  new URLSearchParams(window.location.search).get("parent_origin") ||
+  import.meta.env.VITE_PARENT_ORIGIN ||
+  (import.meta.env.DEV ? "http://127.0.0.1:8000" : window.location.origin);
 
 const FloatingChatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
